@@ -1,3 +1,5 @@
+# tools.strict/search: strict tool use (models: https://platform.claude.com/docs/en/build-with-claude/structured-outputs) and the tool search tool on the Messages API: https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool#model-compatibility
+# tools.choice: auto/any/tool/none; Opus 5.5, Sonnet 5.5 and Fable 5.1 reject forced tool use (any/tool): https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use
 # Thinking: adaptive (default) or between_tools (lowest setting; still returns thinking between tools).
 # disabled is rejected; between_tools works only at low, medium, or high effort.
 # https://platform.claude.com/docs/en/models/sonnet-5-5/migration-guide#turn-off-up-front-thinking
@@ -13,7 +15,7 @@ schema = 2
 base_model = "anthropic/claude-sonnet-5-5"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, strict = true, choice = ["auto", "none"], search = true }
 reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
 structured_output = true
 cache = { explicit = { ttl = ["5m", "1h"], max_breakpoints = 4, targets = ["tools", "system", "messages"], min_tokens = 512 } }
