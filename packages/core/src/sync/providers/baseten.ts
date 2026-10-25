@@ -16,7 +16,7 @@ const API_ENDPOINT = "https://inference.baseten.co/v1/models";
 const MODELS_DIR = path.join(import.meta.dirname, "..", "..", "..", "..", "..", "models");
 const DECISION_PREFIX = "decision-models/";
 const DECISION_HEADER = "# Decision model: POST /v1/systemone (https://docs.baseten.co/inference/model-apis/decision-models)\n"
-  + "# Images go as image_url parts in a user message inside state.messages, which no image_input value describes (https://docs.baseten.co/reference/inference-api/system-one.md).\n";
+  + "# Images go as image_url parts in a user message inside state.messages, which no media_input value describes (https://docs.baseten.co/reference/inference-api/system-one.md).\n";
 
 const Price = z.union([z.string(), z.number()]);
 

@@ -264,7 +264,7 @@ export const openrouter = {
       ? undefined
       : catalogV2Set(model, context.v2?.(model.id));
     const api = isDecisionModel(model)
-      ? withSystemOneImageInput(structuredClone(DECISION_APIS), model.architecture.input_modalities.includes("image"))
+      ? withSystemOneMediaInput(structuredClone(DECISION_APIS), model.architecture.input_modalities.includes("image"))
       : "base_model" in built && typeof built.base_model === "string" && rawLabModel(built.base_model)?.type === "image"
         ? structuredClone(IMAGE_CHAT_APIS)
         : isTextOnly(model)
@@ -306,19 +306,19 @@ const DECISION_APIS = {
   systemone: { sdk: { aisdk: "@ai-sdk/typesafe-ai", opencodeai: "@opencode/ai/providers/openrouter" } },
 };
 // OpenRouter and NanoGPT read System One images as chat-style `image_url` items in a
-// `state` list (OpenRouter ignores TypeSafe's `assets`). Sets that on every
+// `state` list (OpenRouter ignores TypeSafe's `assets`). Sets `media_input = "state"` on every
 // `systemone` table of a model that takes images, and removes it otherwise.
 // https://openrouter.ai/docs/guides/community/multimodal-decisions
 // https://docs.nano-gpt.com/api-reference/endpoint/decisions
-export function withSystemOneImageInput(api: unknown, images: boolean) {
+export function withSystemOneMediaInput(api: unknown, images: boolean) {
   if (!isPlainObject(api)) return api;
   return Object.fromEntries(
     Object.entries(api).map(([protocol, table]) => {
       if (protocol !== "systemone" || !isPlainObject(table)) return [protocol, table];
       const { compatibility: current, ...rest } = table;
       const compatibility = { ...(isPlainObject(current) ? current : {}) };
-      if (images) compatibility.image_input = "state";
-      else delete compatibility.image_input;
+      if (images) compatibility.media_input = "state";
+      else delete compatibility.media_input;
       return [protocol, Object.keys(compatibility).length > 0 ? { ...rest, compatibility } : rest];
     }),
   );

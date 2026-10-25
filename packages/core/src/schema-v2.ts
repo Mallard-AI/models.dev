@@ -369,11 +369,13 @@ export const CompatibilityV2 = z
     // `chat-completions` only: the field that caps output tokens. Unset means OpenAI's current
     // `max_completion_tokens`; "max_tokens" marks hosts that only take the older field.
     max_tokens_field: MaxTokensFieldV2.optional(),
-    // `systemone` only: where the host wants images. "assets" (the default):
-    // TypeSafe's `assets` map, referenced from strings, with the
-    // `TypeSafe-Danger-Zone-Images: true` header. "images": a top-level `images`
-    // list next to `state`. "state": chat-style `image_url` items in a `state` list.
-    image_input: z.enum(["assets", "images", "state"]).optional(),
+    // `systemone` only: where the host wants media (images, audio, video), named
+    // after where it goes in the request body. "assets" (the default): TypeSafe's
+    // `assets` map, referenced by name from `state`, with the
+    // `TypeSafe-Danger-Zone-Images: true` header. "state": media items
+    // (`image_url`, `input_audio`, `video_url`) inside a `state` list. "root": one
+    // top-level list per media kind (`images`, `audio`, `videos`) next to `state`.
+    media_input: z.enum(["assets", "state", "root"]).optional(),
   })
   .strict();
 
@@ -848,7 +850,7 @@ export const AuthoredApiEntryV2 = z
       .optional(),
     compatibility: CompatibilityV2.pick({ reasoning_field: true, max_tokens_field: true })
       .strict()
-      .extend({ image_input: CompatibilityV2.shape.image_input })
+      .extend({ media_input: CompatibilityV2.shape.media_input })
       .optional(),
     capabilities: ApiCapabilitiesV2.optional(),
     // Legacy, v1-only: the v1 `provider.shape` of a file that states its SDK's
@@ -867,7 +869,7 @@ export type AuthoredApiEntryV2 = z.infer<typeof AuthoredApiEntryV2>;
 const COMPATIBILITY_PROTOCOLS = {
   reasoning_field: "chat-completions",
   max_tokens_field: "chat-completions",
-  image_input: "systemone",
+  media_input: "systemone",
 } as const;
 
 export const AuthoredApisV2 = z

@@ -67,7 +67,7 @@ import {
   resolveCanonicalBaseModel,
   catalogCost,
   overrideWhen,
-  withSystemOneImageInput,
+  withSystemOneMediaInput,
   withTextApis,
   type OpenRouterModel,
 } from "../src/sync/providers/openrouter.js";
@@ -7616,7 +7616,7 @@ test("syncs OpenRouter decision models with no supported parameters as decision 
   expect(translated?.v2Set?.api).toEqual({
     systemone: {
       sdk: { aisdk: "@ai-sdk/typesafe-ai", opencodeai: "@opencode/ai/providers/openrouter" },
-      compatibility: { image_input: "state" },
+      compatibility: { media_input: "state" },
     },
   });
   const chat = openrouter.translateModel(openRouterModel(), {
@@ -7653,15 +7653,15 @@ test("lists Responses and Messages after the first API for OpenRouter text-only 
   expect(audio?.v2Set).not.toHaveProperty("api");
 });
 
-test("OpenRouter and NanoGPT mark System One tables of image models with image_input = state", () => {
+test("OpenRouter and NanoGPT mark System One tables of image models with media_input = state", () => {
   const sdk = { aisdk: "@ai-sdk/typesafe-ai" };
-  const once = withSystemOneImageInput({ systemone: { sdk } }, true);
-  expect(once).toEqual({ systemone: { sdk, compatibility: { image_input: "state" } } });
-  expect(withSystemOneImageInput(once, true)).toEqual(once);
+  const once = withSystemOneMediaInput({ systemone: { sdk } }, true);
+  expect(once).toEqual({ systemone: { sdk, compatibility: { media_input: "state" } } });
+  expect(withSystemOneMediaInput(once, true)).toEqual(once);
   // A text-only model loses the field, and other tables are left alone.
-  expect(withSystemOneImageInput({ ...(once as object), "chat-completions": {} }, false))
+  expect(withSystemOneMediaInput({ ...(once as object), "chat-completions": {} }, false))
     .toEqual({ systemone: { sdk }, "chat-completions": {} });
-  expect(withSystemOneImageInput(undefined, true)).toBeUndefined();
+  expect(withSystemOneMediaInput(undefined, true)).toBeUndefined();
 });
 
 test("lists the Images API next to chat for OpenRouter chat models with an image lab", () => {
