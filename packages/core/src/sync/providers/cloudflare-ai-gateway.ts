@@ -7,6 +7,7 @@ import type { CostV2, CostWhenV2 } from "../../schema-v2.js";
 import { readLabModel } from "../../translate.js";
 import type { ExistingModel, SyncProvider, SyncedBaseModel } from "../index.js";
 import { MissingReasoningOptionsError } from "../missing-reasoning-options.js";
+import { schemaToolChoice, toolsWith } from "./cloudflare-workers-ai.js";
 
 const API_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const PROVIDER_DIR = path.join(
@@ -329,6 +330,9 @@ export const cloudflareAiGateway = {
         api: decision
           ? () => RUN_API
           : (current: unknown) => gatewayApis(current, native?.protocol, source.catalog.request_formats),
+        ...(decision || base === undefined || !baseToolCall(base)
+          ? {}
+          : { "capabilities.tools": (current: unknown) => gatewayTools(current, native && firstPartyTools(base), source.schemaInput) }),
       },
     };
   },
@@ -1231,6 +1235,34 @@ function baseReasoning(id: string) {
   const file = path.join(MODELS_ROOT, `${id}.toml`);
   return existsSync(file) && z.object({ reasoning: z.boolean().optional() }).passthrough()
     .parse(readLabModel(file, id)).reasoning === true;
+}
+
+const TOOL_FIELDS = ["strict", "choice", "search", "grammar"];
+
+// Native routes forward the body unchanged, so once the lab's own API
+// (providers/<lab>) states its tool fields they are the model's. Otherwise the
+// catalog schema's tool_choice values fill in `choice`.
+function gatewayTools(current: unknown, lab: Record<string, unknown> | undefined, schemaInput: unknown) {
+  if (lab === undefined) return toolsWith(current, { choice: schemaToolChoice(schemaInput) });
+  if (isRecord(current) && current.supported === false) return current;
+  const rest = Object.fromEntries(Object.entries(isRecord(current) ? current : {}).filter(([key]) => !TOOL_FIELDS.includes(key)));
+  return { supported: true, ...rest, ...lab };
+}
+
+// The tool fields of the lab's own provider file, when it states any.
+function firstPartyTools(base: string) {
+  const [lab, ...rest] = base.split("/");
+  const file = path.join(path.dirname(PROVIDER_DIR), lab!, "models", `${rest.join("/")}.toml`);
+  if (!existsSync(file)) return undefined;
+  const tools = (Bun.TOML.parse(readFileSync(file, "utf8")) as { capabilities?: { tools?: unknown } }).capabilities?.tools;
+  const fields = Object.entries(isRecord(tools) ? tools : {}).filter(([key]) => TOOL_FIELDS.includes(key));
+  return fields.length > 0 ? Object.fromEntries(fields) : undefined;
+}
+
+function baseToolCall(id: string) {
+  const file = path.join(MODELS_ROOT, `${id}.toml`);
+  return existsSync(file) && z.object({ tool_call: z.boolean().optional() }).passthrough()
+    .parse(readLabModel(file, id)).tool_call === true;
 }
 
 function prefixNotes(id: string) {

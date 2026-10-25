@@ -423,6 +423,26 @@ test("rejects a catalog with no eligible proxied models", async () => {
   }
 });
 
+test("takes tool_choice values from the catalog schema when it names them", () => {
+  const toolsSet = (model_id: string, schemaInput: unknown) => (cloudflareAiGateway.translateModel({
+    catalog: {
+      model_id,
+      task: "Text Generation" as const,
+      provider_details: providerDetails({ input_tokens: 1, output_tokens: 2 }),
+    },
+    schemaInput,
+  }, { authored: () => undefined, existing: () => undefined }) as unknown as {
+    v2Set: Record<string, (current: unknown) => unknown>;
+  }).v2Set["capabilities.tools"]!;
+
+  const effort = { reasoning: { properties: { effort: { enum: ["low", "high"] } } } };
+  const minimax = { oneOf: [{ properties: { ...effort, tool_choice: { type: "string", enum: ["none", "auto"] } } }] };
+  expect(toolsSet("minimax/m3.1-flash", minimax)(undefined)).toEqual({ supported: true, choice: ["auto", "none"] });
+  // A schema that leaves tool_choice open keeps the file's tools table.
+  const current = { supported: true, choice: ["auto"] };
+  expect(toolsSet("xai/grok-4.7", { properties: { ...effort, tool_choice: { type: "string" } } })(current)).toBe(current);
+});
+
 test("syncs Jev through shared TypeSafe metadata without inventing tool support", async () => {
   const originalFetch = globalThis.fetch;
   const originalToken = process.env.CLOUDFLARE_API_TOKEN;
