@@ -21,7 +21,7 @@ top_k = false
 cache = { implicit = true }
 
 [api.chat-completions]
-compatibility = { reasoning_field = "reasoning_content" }
+compatibility = { reasoning_field = "reasoning_content", max_tokens_field = "max_tokens" }
 
 [api.messages]
 base_url = "https://open.bigmodel.cn/api/anthropic/v1"
