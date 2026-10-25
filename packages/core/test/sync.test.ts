@@ -3051,6 +3051,12 @@ test("OpenRouter tool_choice sets every documented tool choice and keeps other t
   expect(toolsSet(["tools"])({ supported: true, choice })).toEqual({ supported: true });
   expect(toolsSet(["tools"])(undefined)).toBeUndefined();
   expect(toolsSet(["tool_choice"])({ supported: false })).toEqual({ supported: false });
+
+  const opus = openrouter.translateModel(
+    openRouterModel({ id: "anthropic/claude-opus-5.5", supported_parameters: ["tools", "tool_choice"] }),
+    translateContext,
+  ) as unknown as { v2Set: Record<string, OverridesSet> };
+  expect(opus.v2Set["capabilities.tools"]!(undefined)).toEqual({ supported: true, choice: ["auto", "none"] });
 });
 
 test("syncs every OpenRouter price into v2 files without changing v1", async () => {

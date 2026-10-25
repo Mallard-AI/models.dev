@@ -273,7 +273,8 @@ export const openrouter = {
     const v2Set = {
       ...catalog?.v2Set,
       ...(api === undefined ? {} : { api }),
-      "capabilities.tools": (current: unknown) => toolChoice(model, current),
+      "capabilities.tools": (current: unknown) =>
+        toolChoice(model.supported_parameters.includes("tool_choice"), "base_model" in built ? built.base_model : undefined, current),
     };
     return {
       id: model.id,
@@ -287,15 +288,30 @@ export const openrouter = {
   },
 } satisfies SyncProvider<OpenRouterModel>;
 
-// A model that lists `tool_choice` takes every documented value: "auto", "none",
-// "required" and a named function.
+// A model that lists `tool_choice` takes every documented value ("auto", "none",
+// "required" and a named function), unless the model itself rejects forced tool use.
 // https://openrouter.ai/docs/api-reference/parameters#tool-choice
-function toolChoice(model: OpenRouterModel, current: unknown) {
+export function toolChoice(listed: boolean, baseModel: string | undefined, current: unknown) {
   const { choice: _choice, ...rest } = isPlainObject(current) ? current : {};
-  const listed = model.supported_parameters.includes("tool_choice") && rest.supported !== false;
-  if (listed) return { supported: true, ...rest, choice: ["auto", "none", "required", "tool"] };
-  return Object.keys(rest).length > 0 ? rest : undefined;
+  if (!listed || rest.supported === false) return Object.keys(rest).length > 0 ? rest : undefined;
+  return {
+    supported: true,
+    ...rest,
+    choice: baseModel !== undefined && UNFORCED_TOOL_MODELS.has(baseModel)
+      ? ["auto", "none"]
+      : ["auto", "none", "required", "tool"],
+  };
 }
+
+// Models that reject forced tool use (`required` or a named tool) on every host.
+// OpenRouter returns the upstream 400; Vercel drops the forced choice.
+// https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use
+const UNFORCED_TOOL_MODELS = new Set([
+  "anthropic/claude-fable-5-1",
+  "anthropic/claude-mythos-5-1",
+  "anthropic/claude-opus-5-5",
+  "anthropic/claude-sonnet-5-5",
+]);
 
 function isUnavailable(model: OpenRouterModel) {
   return (

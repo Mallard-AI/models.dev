@@ -7,7 +7,7 @@ base_model = "anthropic/claude-sonnet-5-5"
 description = "Balanced Claude model for coding, analysis, agent workflows, and cost control"
 
 [capabilities]
-tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
+tools = { supported = true, choice = ["auto", "none"] }
 reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
 structured_output = true
 system_updates = true
