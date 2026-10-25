@@ -39,7 +39,7 @@ context = 1_048_576
 output = 393_216
 
 [api.chat-completions]
-compatibility = { reasoning_field = "reasoning_content" }
+compatibility = { reasoning_field = "reasoning_content", max_tokens_field = "max_tokens" }
 capabilities = { system_updates = true }
 
 [api.messages]
