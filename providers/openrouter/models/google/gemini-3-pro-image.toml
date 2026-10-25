@@ -5,7 +5,7 @@ schema = 2
 base_model = "google/gemini-3-pro-image"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true }
 structured_output = true
 

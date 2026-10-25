@@ -7,7 +7,7 @@ base_model = "zhipuai/glm-5.3"
 description = "Flagship GLM model for hybrid reasoning, coding, and agentic engineering"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true, effort = ["low", "high", "max"] }
 structured_output = true
 

@@ -270,7 +270,11 @@ export const openrouter = {
         : isTextOnly(model)
           ? withTextApis
           : undefined;
-    const v2Set = api === undefined ? catalog?.v2Set : { ...catalog?.v2Set, api };
+    const v2Set = {
+      ...catalog?.v2Set,
+      ...(api === undefined ? {} : { api }),
+      "capabilities.tools": (current: unknown) => toolChoice(model, current),
+    };
     return {
       id: model.id,
       model: translated,
@@ -282,6 +286,16 @@ export const openrouter = {
     };
   },
 } satisfies SyncProvider<OpenRouterModel>;
+
+// A model that lists `tool_choice` takes every documented value: "auto", "none",
+// "required" and a named function.
+// https://openrouter.ai/docs/api-reference/parameters#tool-choice
+function toolChoice(model: OpenRouterModel, current: unknown) {
+  const { choice: _choice, ...rest } = isPlainObject(current) ? current : {};
+  const listed = model.supported_parameters.includes("tool_choice") && rest.supported !== false;
+  if (listed) return { supported: true, ...rest, choice: ["auto", "none", "required", "tool"] };
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
 
 function isUnavailable(model: OpenRouterModel) {
   return (

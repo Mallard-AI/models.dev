@@ -3039,6 +3039,20 @@ test("OpenRouter overrides replace only the file's overrides the catalog owns", 
   expect(flat.v2Set["cost.text.output.overrides"]!([stale])).toBeUndefined();
 });
 
+test("OpenRouter tool_choice sets every documented tool choice and keeps other tool fields", () => {
+  const toolsSet = (supported_parameters: string[]) =>
+    (openrouter.translateModel(openRouterModel({ supported_parameters }), translateContext) as unknown as {
+      v2Set: Record<string, OverridesSet>;
+    }).v2Set["capabilities.tools"]!;
+  const choice = ["auto", "none", "required", "tool"];
+
+  expect(toolsSet(["tools", "tool_choice"])(undefined)).toEqual({ supported: true, choice });
+  expect(toolsSet(["tools", "tool_choice"])({ supported: true, updates: true })).toEqual({ supported: true, updates: true, choice });
+  expect(toolsSet(["tools"])({ supported: true, choice })).toEqual({ supported: true });
+  expect(toolsSet(["tools"])(undefined)).toBeUndefined();
+  expect(toolsSet(["tool_choice"])({ supported: false })).toEqual({ supported: false });
+});
+
 test("syncs every OpenRouter price into v2 files without changing v1", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "models-dev-openrouter-prices-"));
   const modelsDir = path.join(root, "providers", "example", "models");

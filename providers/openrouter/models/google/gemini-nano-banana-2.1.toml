@@ -13,7 +13,7 @@ input = ["image/png", "image/jpeg", "image/webp", "text"]
 output = ["text", "image/png", "image/jpeg"]
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true, effort = ["none", "minimal", "high"] }
 structured_output = true
 temperature = true
