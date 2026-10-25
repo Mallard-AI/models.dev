@@ -103,6 +103,17 @@ body = { speed = "fast" }
   - `tools.updates`: a message in the history adds (or removes) tools and keeps the cache: Anthropic `tool_addition`/`tool_removal`, OpenAI Responses `additional_tools`, Kimi K3's tool-carrying system message. Add-only counts; note "add only" in the file comment. Changing the top-level `tools` list doesn't count. Tool search is `tools.search`.
 - These three flags default to false. Be conservative: set one to `true` only when the host has an explicit, documented way to do it (or passes requests through to a lab that documents it) and you're sure it works there; confirm live when you can. A server that happens to keep the cache isn't enough. Otherwise leave it out (don't write `= false`; `bun validate` rejects it). The v2 API always publishes them as `true` or `false`, with a left-out flag published as `false`.
 - Put a flag at the top level only when it holds on every API the model lists. When it holds on some of them only, leave the top level out and set it on those APIs instead, e.g. `[api.messages]` with `capabilities = { effort_updates = true }` (`system_updates`, `effort_updates` and `tools = { updates = true }` are allowed there).
+- Tool details (`strict`, `choice`, `search`, `grammar`, `updates`) depend on the API: OpenAI's tool search only works on Responses, Anthropic's OpenAI-compatible Chat Completions ignores `strict`, Moonshot's Responses only takes `tool_choice: "auto"`. Top-level `[capabilities] tools` values hold on every API the model lists; an API's `capabilities = { tools = { … } }` replaces any of them for that API. The v2 API publishes the resolved values on each API (`api.<protocol>.capabilities.tools`, `updates` always stated) and keeps only `supported` on the model. `grammar` (custom tools with a Lark or regex grammar) only exists on OpenAI-style APIs (`responses`, `chat-completions`).
+
+```toml
+[capabilities]
+tools = { supported = true, strict = true, choice = ["auto", "none", "required", "tool"] }
+
+[api.responses]
+capabilities = { tools = { choice = ["auto"], search = true } }
+
+[api.chat-completions]
+```
 - A mode without a cost takes the base prices times the multiplier for its service tier: the mode's `service_tier`, or its name when unset (OpenAI's `fast` mode sets `service_tier = "priority"`).
 - Web search fees go in `[cost.web_search]`: `price` is USD per 1,000 searches (or search requests, as the host bills them). Prices by search depth are `[[cost.web_search.overrides]]` with `when = { search_context_size = { equals = "high" } }`. v1 has no web search price.
 - A plain-number multiplier `factor` (`factor = 1.1`) multiplies every price, `web_search` included; the object form (`factor = { text = 1.1, audio = 1.1 }`) multiplies only the prices it names, so use it when the host's multiplier covers token prices only.

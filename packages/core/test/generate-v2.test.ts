@@ -90,7 +90,7 @@ describe("v2 catalog generation", () => {
       output: ["text"],
     });
     expect(translated.capabilities).toEqual({
-      tools: { supported: true, updates: false },
+      tools: { supported: true },
       reasoning: {
         supported: true,
         toggle: true,
@@ -101,6 +101,13 @@ describe("v2 catalog generation", () => {
       temperature: true,
       system_updates: false,
       effort_updates: false,
+    });
+    expect(translated.api).toEqual({
+      responses: {
+        base_url: "https://api.openai.com/v1",
+        sdk: { aisdk: "@ai-sdk/openai" },
+        capabilities: { tools: { updates: false } },
+      },
     });
     expect(translated.cost).toEqual({
       text: {

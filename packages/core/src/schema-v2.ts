@@ -113,25 +113,33 @@ export const KnownToolGrammarV2 = z.enum(ToolGrammarV2Values);
 export const ToolGrammarV2 = openEnum(ToolGrammarV2Values);
 export type ToolGrammarV2 = z.infer<typeof ToolGrammarV2>;
 
-const toolsSupportedV2 = {
-  supported: z.literal(true),
-  strict: z.boolean().optional(),
-  choice: z.array(ToolChoiceV2).optional(),
-  search: z.boolean().optional(),
-  grammar: z.array(ToolGrammarV2).optional(),
-  updates: z.boolean().optional(),
-};
+// How a model takes tools. These depend on the API, so the v2 API publishes them
+// on each API (`api[<protocol>].capabilities.tools`), not on the model.
+// `grammar` (custom tools constrained by a Lark or regex grammar) only exists on
+// OpenAI-style APIs (`responses`, `chat-completions`).
+export const ToolDetailsV2 = z
+  .object({
+    strict: z.boolean().optional(),
+    choice: z.array(ToolChoiceV2).optional(),
+    search: z.boolean().optional(),
+    grammar: z.array(ToolGrammarV2).optional(),
+    updates: z.boolean().optional(),
+  })
+  .strict();
 
-// Files may leave `updates` out, which means false. The API always states it.
+export type ToolDetailsV2 = z.infer<typeof ToolDetailsV2>;
+
+// A file's top-level tool details hold on every API the model lists; an
+// `[api.<protocol>]` table can replace any of them for that API. Files may leave
+// `updates` out, which means false.
 export const AuthoredToolsSupportV2 = z.discriminatedUnion("supported", [
   z.object({ supported: z.literal(false) }).strict(),
-  z.object(toolsSupportedV2).strict(),
+  z.object({ supported: z.literal(true), ...ToolDetailsV2.shape }).strict(),
 ]);
 
-export const ToolsSupportV2 = z.discriminatedUnion("supported", [
-  z.object({ supported: z.literal(false) }).strict(),
-  z.object({ ...toolsSupportedV2, updates: z.boolean() }).strict(),
-]);
+export type AuthoredToolsSupportV2 = z.infer<typeof AuthoredToolsSupportV2>;
+
+export const ToolsSupportV2 = z.object({ supported: z.boolean() }).strict();
 
 export type ToolsSupportV2 = z.infer<typeof ToolsSupportV2>;
 
@@ -382,15 +390,24 @@ export type CompatibilityV2 = z.infer<typeof CompatibilityV2>;
 export const CapabilitiesOverrideV2 = AuthoredCapabilitiesV2.partial();
 export type CapabilitiesOverrideV2 = z.infer<typeof CapabilitiesOverrideV2>;
 
-// Mid-conversation flags that hold on one API but not on others the model lists.
-// The model's top-level capabilities apply to every API.
-export const ApiCapabilitiesV2 = z
+// Capabilities that hold on one API but not on others the model lists. The
+// model's top-level capabilities apply to every API; a value here replaces the
+// top-level one for that field on this API.
+export const AuthoredApiCapabilitiesV2 = z
   .object({
     system_updates: z.boolean().optional(),
     effort_updates: z.boolean().optional(),
-    tools: z.object({ updates: z.boolean() }).strict().optional(),
+    tools: ToolDetailsV2.optional(),
   })
   .strict();
+
+export type AuthoredApiCapabilitiesV2 = z.infer<typeof AuthoredApiCapabilitiesV2>;
+
+// `tools` is set on every API of a model that supports tools: the model's
+// top-level tool details merged with the API table's, with `updates` always stated.
+export const ApiCapabilitiesV2 = AuthoredApiCapabilitiesV2.extend({
+  tools: ToolDetailsV2.extend({ updates: z.boolean() }).strict().optional(),
+}).strict();
 
 export type ApiCapabilitiesV2 = z.infer<typeof ApiCapabilitiesV2>;
 
@@ -850,7 +867,7 @@ export const AuthoredApiEntryV2 = z
       .strict()
       .extend({ image_input: CompatibilityV2.shape.image_input })
       .optional(),
-    capabilities: ApiCapabilitiesV2.optional(),
+    capabilities: AuthoredApiCapabilitiesV2.optional(),
     // Legacy, v1-only: the v1 `provider.shape` of a file that states its SDK's
     // default protocol (Responses on `@ai-sdk/openai`). It only keeps that
     // published v1 field unchanged; the v2 API never emits it.
