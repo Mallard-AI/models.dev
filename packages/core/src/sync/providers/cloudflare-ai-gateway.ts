@@ -1240,13 +1240,14 @@ function baseReasoning(id: string) {
 const TOOL_FIELDS = ["strict", "choice", "search", "grammar"];
 
 // Native routes forward the body unchanged, so once the lab's own API
-// (providers/<lab>) states its tool fields they are the model's. Otherwise the
-// catalog schema's tool_choice values fill in `choice`.
-function gatewayTools(current: unknown, lab: Record<string, unknown> | undefined, schemaInput: unknown) {
-  if (lab === undefined) return toolsWith(current, { choice: schemaToolChoice(schemaInput) });
+// (providers/<lab>) states its tool fields they are the model's. The catalog
+// schema's tool_choice values fill in `choice` when the lab doesn't state it.
+export function gatewayTools(current: unknown, lab: Record<string, unknown> | undefined, schemaInput: unknown) {
+  const choice = schemaToolChoice(schemaInput);
+  if (lab === undefined) return toolsWith(current, { choice });
   if (isRecord(current) && current.supported === false) return current;
   const rest = Object.fromEntries(Object.entries(isRecord(current) ? current : {}).filter(([key]) => !TOOL_FIELDS.includes(key)));
-  return { supported: true, ...rest, ...lab };
+  return { supported: true, ...rest, ...(choice === undefined ? {} : { choice }), ...lab };
 }
 
 // The tool fields of the lab's own provider file, when it states any.
