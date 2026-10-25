@@ -274,7 +274,7 @@ export const openrouter = {
       ...catalog?.v2Set,
       ...(api === undefined ? {} : { api }),
       "capabilities.tools": (current: unknown) =>
-        toolChoice(model.supported_parameters.includes("tool_choice"), "base_model" in built ? built.base_model : undefined, current),
+        toolChoice(model.supported_parameters.includes("tool_choice"), "base_model" in built ? labToolChoice(built.base_model) : undefined, current),
     };
     return {
       id: model.id,
@@ -289,29 +289,25 @@ export const openrouter = {
 } satisfies SyncProvider<OpenRouterModel>;
 
 // A model that lists `tool_choice` takes every documented value ("auto", "none",
-// "required" and a named function), unless the model itself rejects forced tool use.
+// "required" and a named function), narrowed to the base model's own `choice`
+// when its lab file sets one.
 // https://openrouter.ai/docs/api-reference/parameters#tool-choice
-function toolChoice(listed: boolean, baseModel: string | undefined, current: unknown) {
+function toolChoice(listed: boolean, labChoice: unknown[] | undefined, current: unknown) {
   const { choice: _choice, ...rest } = isPlainObject(current) ? current : {};
   if (!listed || rest.supported === false) return Object.keys(rest).length > 0 ? rest : undefined;
   return {
     supported: true,
     ...rest,
-    choice: baseModel !== undefined && UNFORCED_TOOL_MODELS.has(baseModel)
-      ? ["auto", "none"]
-      : ["auto", "none", "required", "tool"],
+    choice: ["auto", "none", "required", "tool"].filter((value) => labChoice?.includes(value) ?? true),
   };
 }
 
-// Models that reject forced tool use (`required` or a named tool) on every host.
-// OpenRouter returns the upstream 400 (live, anthropic/claude-opus-5.5, 2026-10-24).
-// https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use
-const UNFORCED_TOOL_MODELS = new Set([
-  "anthropic/claude-fable-5-1",
-  "anthropic/claude-mythos-5-1",
-  "anthropic/claude-opus-5-5",
-  "anthropic/claude-sonnet-5-5",
-]);
+// The `tools.choice` a lab file sets for the model on every host.
+function labToolChoice(modelID: string) {
+  const capabilities = rawLabModel(modelID)?.capabilities;
+  const tools = isPlainObject(capabilities) ? capabilities.tools : undefined;
+  return isPlainObject(tools) && Array.isArray(tools.choice) ? tools.choice : undefined;
+}
 
 function isUnavailable(model: OpenRouterModel) {
   return (
