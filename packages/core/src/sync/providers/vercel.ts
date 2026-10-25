@@ -67,6 +67,7 @@ export const VercelModel = z.object({
   // text/text handling in buildVercelModel instead of failing the whole sync.
   type: KnownModelType.or(z.string()),
   tags: z.array(z.string()).optional().default([]),
+  supported_parameters: z.array(z.string()).optional().default([]),
   // Keep the catalog parse forward-compatible with new control shapes or
   // effort values; unresolved options retain the authored menu below.
   reasoning_options: z.array(z.unknown()).optional(),
@@ -123,6 +124,9 @@ export const vercel = {
       ...(model.type === "evaluation" ? { api: structuredClone(DECISION_APIS) } : {}),
       ...(model.type === "language" && (type ?? "chat") === "chat" ? { api: chatApis } : {}),
       ...(cache === undefined ? {} : { "capabilities.cache": cache }),
+      ...(model.type === "language"
+        ? { "capabilities.tools": (current: unknown) => toolChoice(model, existing, current) }
+        : {}),
     };
     return {
       id: model.id,
@@ -134,6 +138,19 @@ export const vercel = {
     };
   },
 } satisfies SyncProvider<VercelModel>;
+
+// A tool-calling model that lists `tool_choice` takes "auto", "none", "required"
+// and a named function.
+// https://vercel.com/docs/ai-gateway/inputs-and-tools/tool-use
+// https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions/tool-calling
+function toolChoice(model: VercelModel, existing: ExistingModel | undefined, current: unknown) {
+  const { choice: _choice, ...rest } = (current ?? {}) as Doc;
+  const tools = existing?.tool_call ?? model.tags.includes("tool-use");
+  if (tools && model.supported_parameters.includes("tool_choice")) {
+    return { supported: true, ...rest, choice: ["auto", "none", "required", "tool"] };
+  }
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
 
 // The catalog tags each model `implicit-caching` and/or `explicit-caching`. An
 // untagged model with a cache read price caches implicitly, except Anthropic's,

@@ -3,7 +3,7 @@ schema = 2
 base_model = "anthropic/claude-sonnet-4-6"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true, effort = ["none", "low", "medium", "high", "max"], budget = {} }
 cache = { explicit = true }
 

@@ -4,7 +4,7 @@ base_model = "anthropic/claude-haiku-4-5"
 name = "Claude Haiku 4.5"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true, toggle = true, budget = { min = 1_024 } }
 cache = { explicit = true }
 

@@ -4,7 +4,7 @@ base_model = "anthropic/claude-opus-4-5"
 name = "Claude Opus 4.5"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
 reasoning = { supported = true, effort = ["none", "low", "medium", "high"], budget = {} }
 cache = { explicit = true }
 
