@@ -390,14 +390,20 @@ export function buildCloudflareAiGatewayModel(
 // schema. Generated media comes back as a URL (or a data URI), transcripts as text.
 // Decision models (TypeSafe Jev) take a System One body as `input` and answer in a run
 // record: `{ result: { state: "Completed", result: { answers, usage } } }`.
-// OpenCode's cloudflare-ai-gateway entry calls /ai/run for decision models only,
-// so media models have no OpenCode package.
+// @opencode/ai speaks /ai/run for decision models only, through its
+// cloudflare-run-decisions protocol, which posts to the full Run URL (Workers AI
+// tables put it all in base_url). v1 publishes base_url, so `/run` goes in path.
+// Media models have no OpenCode package.
 const RUN_BASE_URL = "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai";
 const RUN_API = {
   "workers-ai-run": { base_url: RUN_BASE_URL, sdk: { opencodeai: "none" } },
 };
 const DECISION_RUN_API = {
-  "workers-ai-run": { base_url: RUN_BASE_URL, sdk: { opencodeai: "@opencode/ai/providers/cloudflare-ai-gateway" } },
+  "workers-ai-run": {
+    base_url: RUN_BASE_URL,
+    path: "/run",
+    sdk: { opencodeai: "@opencode/ai/protocols/cloudflare-run-decisions" },
+  },
 };
 
 const MEDIA_NOTES: Record<MediaType, string[]> = {

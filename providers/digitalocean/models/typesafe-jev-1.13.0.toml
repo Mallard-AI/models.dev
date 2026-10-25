@@ -16,7 +16,7 @@ output = ["decision"]
 structured_output = true
 
 [api.systemone]
-sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/digitalocean" }
+sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/protocols/system-one" }
 
 [cost.text.input]
 price = 0.042
