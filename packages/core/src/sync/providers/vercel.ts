@@ -125,7 +125,7 @@ export const vercel = {
       ...(model.type === "language" && (type ?? "chat") === "chat" ? { api: chatApis } : {}),
       ...(cache === undefined ? {} : { "capabilities.cache": cache }),
       ...(model.type === "language"
-        ? { "capabilities.tools": (current: unknown) => toolChoice(model, existing, current) }
+        ? { "capabilities.tools": (current: unknown) => toolChoice(model, existing, baseModel, current) }
         : {}),
     };
     return {
@@ -140,17 +140,31 @@ export const vercel = {
 } satisfies SyncProvider<VercelModel>;
 
 // A tool-calling model that lists `tool_choice` takes "auto", "none", "required"
-// and a named function.
+// and a named function, unless the model itself rejects forced tool use.
 // https://vercel.com/docs/ai-gateway/inputs-and-tools/tool-use
 // https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions/tool-calling
-function toolChoice(model: VercelModel, existing: ExistingModel | undefined, current: unknown) {
+function toolChoice(model: VercelModel, existing: ExistingModel | undefined, baseModel: string | undefined, current: unknown) {
   const { choice: _choice, ...rest } = (current ?? {}) as Doc;
   const tools = existing?.tool_call ?? model.tags.includes("tool-use");
-  if (tools && model.supported_parameters.includes("tool_choice")) {
-    return { supported: true, ...rest, choice: ["auto", "none", "required", "tool"] };
-  }
-  return Object.keys(rest).length > 0 ? rest : undefined;
+  if (!tools || !model.supported_parameters.includes("tool_choice")) return Object.keys(rest).length > 0 ? rest : undefined;
+  return {
+    supported: true,
+    ...rest,
+    choice: baseModel !== undefined && UNFORCED_TOOL_MODELS.has(baseModel)
+      ? ["auto", "none"]
+      : ["auto", "none", "required", "tool"],
+  };
 }
+
+// Models that reject forced tool use (`required` or a named tool) on every host.
+// The gateway drops a forced choice for them (live, anthropic/claude-opus-5.5, 2026-10-24).
+// https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use
+const UNFORCED_TOOL_MODELS = new Set([
+  "anthropic/claude-fable-5-1",
+  "anthropic/claude-mythos-5-1",
+  "anthropic/claude-opus-5-5",
+  "anthropic/claude-sonnet-5-5",
+]);
 
 // The catalog tags each model `implicit-caching` and/or `explicit-caching`. An
 // untagged model with a cache read price caches implicitly, except Anthropic's,

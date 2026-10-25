@@ -5,7 +5,7 @@ base_model = "anthropic/claude-fable-5-1"
 description = "Claude model for creative writing, analysis, and controlled agent workflows"
 
 [capabilities]
-tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
+tools = { supported = true, choice = ["auto", "none"] }
 reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
 cache = { explicit = true }
 

@@ -6317,6 +6317,9 @@ test("Vercel tool_choice sets every documented tool choice for tool-calling mode
   // The file's tool_call wins over the catalog tag, as in the v1 fields.
   expect(toolsSet(["tool-use"], ["tools", "tool_choice"], { tool_call: false })({ supported: false })).toEqual({ supported: false });
   expect(toolsSet([], [])(undefined)).toBeUndefined();
+  // Claude models that reject forced tool use keep only auto and none.
+  expect(toolsSet(["tool-use"], ["tools", "tool_choice"], { base_model: "anthropic/claude-opus-5-5" })(undefined))
+    .toEqual({ supported: true, choice: ["auto", "none"] });
 });
 
 test("Vercel sync takes catalog reasoning controls over stale authored controls", () => {
