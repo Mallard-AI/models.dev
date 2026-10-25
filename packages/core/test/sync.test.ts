@@ -6317,9 +6317,12 @@ test("Vercel tool_choice sets every documented tool choice for tool-calling mode
   // The file's tool_call wins over the catalog tag, as in the v1 fields.
   expect(toolsSet(["tool-use"], ["tools", "tool_choice"], { tool_call: false })({ supported: false })).toEqual({ supported: false });
   expect(toolsSet([], [])(undefined)).toBeUndefined();
-  // Claude models that reject forced tool use keep only auto and none.
-  expect(toolsSet(["tool-use"], ["tools", "tool_choice"], { base_model: "anthropic/claude-opus-5-5" })(undefined))
-    .toEqual({ supported: true, choice: ["auto", "none"] });
+  // A stale `supported = false` in the file doesn't survive tool support.
+  expect(toolsSet(["tool-use"], ["tools", "tool_choice"])({ supported: false })).toEqual({ supported: true, choice });
+  // A lab that limits choice (Claude Opus 5.5: auto, none) is inherited, not restated.
+  const opus = { base_model: "anthropic/claude-opus-5-5" };
+  expect(toolsSet(["tool-use"], ["tools", "tool_choice"], opus)(undefined)).toBeUndefined();
+  expect(toolsSet(["tool-use"], ["tools", "tool_choice"], opus)({ supported: true, choice })).toEqual({ supported: true });
 });
 
 test("Vercel sync takes catalog reasoning controls over stale authored controls", () => {
@@ -6476,7 +6479,7 @@ test("Vercel sync maps every catalog type and serves media models on their own e
   expect(vercel.translateModel(vercelMedia({ id: "example/chat-model", type: "language" }), context)).toHaveProperty("v2Set.api", chatApis);
   // A language route for a model we type as image keeps only its default API.
   const imageContext = { ...context, existing: () => ({ type: "image" }) as any };
-  expect(vercel.translateModel(vercelMedia({ id: "example/image-chat", type: "language" }), imageContext)).not.toHaveProperty("v2Set.api");
+  expect(vercel.translateModel(vercelMedia({ id: "example/image-chat", type: "language" }), imageContext)).not.toHaveProperty("v2Set");
   for (const catalogType of ["language", "evaluation", "something-new"]) {
     const translated = vercel.translateModel(vercelMedia({ id: "example/chat-model", type: catalogType }), context) as any;
     expect(translated.v2).toBeUndefined();

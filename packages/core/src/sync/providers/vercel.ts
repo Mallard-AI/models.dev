@@ -122,11 +122,14 @@ export const vercel = {
     const type = existing?.type ?? (baseModel === undefined ? undefined : labDoc(baseModel)?.type);
     const v2Set = {
       ...(model.type === "evaluation" ? { api: structuredClone(DECISION_APIS) } : {}),
-      ...(model.type === "language" && (type ?? "chat") === "chat" ? { api: chatApis } : {}),
-      ...(cache === undefined ? {} : { "capabilities.cache": cache }),
-      ...(model.type === "language"
-        ? { "capabilities.tools": (current: unknown) => toolChoice(model, existing, baseModel === undefined ? undefined : labToolChoice(baseModel), current) }
+      ...(model.type === "language" && (type ?? "chat") === "chat"
+        ? {
+          api: chatApis,
+          "capabilities.tools": (current: unknown) =>
+            toolChoice(model, existing, baseModel === undefined ? undefined : labToolChoice(baseModel), current),
+        }
         : {}),
+      ...(cache === undefined ? {} : { "capabilities.cache": cache }),
     };
     return {
       id: model.id,
@@ -141,18 +144,21 @@ export const vercel = {
 
 // A tool-calling model that lists `tool_choice` takes "auto", "none", "required"
 // and a named function, narrowed to the base model's own `choice` when its lab
-// file sets one.
+// file sets one. A choice equal to the lab's is inherited, not restated.
 // https://vercel.com/docs/ai-gateway/inputs-and-tools/tool-use
 // https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions/tool-calling
 function toolChoice(model: VercelModel, existing: ExistingModel | undefined, labChoice: unknown[] | undefined, current: unknown) {
   const { choice: _choice, ...rest } = (current ?? {}) as Doc;
   const tools = existing?.tool_call ?? model.tags.includes("tool-use");
-  if (!tools || !model.supported_parameters.includes("tool_choice")) return Object.keys(rest).length > 0 ? rest : undefined;
-  return {
-    supported: true,
-    ...rest,
-    choice: ["auto", "none", "required", "tool"].filter((value) => labChoice?.includes(value) ?? true),
-  };
+  const choice = ["auto", "none", "required", "tool"].filter((value) => labChoice?.includes(value) ?? true);
+  if (!tools || !model.supported_parameters.includes("tool_choice") || sameChoice(choice, labChoice)) {
+    return Object.keys(rest).length > 0 ? rest : undefined;
+  }
+  return { ...rest, supported: true, choice };
+}
+
+function sameChoice(choice: string[], labChoice: unknown[] | undefined) {
+  return labChoice !== undefined && choice.length === labChoice.length && choice.every((value) => labChoice.includes(value));
 }
 
 // The `tools.choice` a lab file sets for the model on every host.
