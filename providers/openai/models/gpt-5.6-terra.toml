@@ -1,3 +1,5 @@
+# tools: function calling (strict mode, tool_choice auto/none/required/named) and custom tools (grammar lark/regex, GPT-5 and later): https://developers.openai.com/api/docs/guides/function-calling
+# tools.search: tool_search on the Responses API only (gpt-5.4 and later, per the model page's Supported tools): https://developers.openai.com/api/docs/guides/tools-tool-search
 # Pricing: https://developers.openai.com/api/docs/pricing (Terra/Luna cut 2026-07-30)
 # Web search: $10 per 1,000 web_search tool calls (all models): https://developers.openai.com/api/docs/pricing#built-in-tools
 # Token-only multipliers (object factor, so cost.web_search is unscaled): Fast mode (https://developers.openai.com/api/docs/guides/priority-processing); Flex (https://developers.openai.com/api/docs/guides/flex-processing).
@@ -8,7 +10,7 @@ schema = 2
 base_model = "openai/gpt-5.6-terra"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, strict = true, choice = ["auto", "none", "required", "tool"], search = true, grammar = ["lark", "regex"] }
 reasoning = { supported = true, effort = ["none", "low", "medium", "high", "xhigh", "max"] }
 structured_output = true
 system_updates = true
