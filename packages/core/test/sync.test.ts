@@ -3056,7 +3056,9 @@ test("OpenRouter tool_choice sets every documented tool choice and keeps other t
     openRouterModel({ id: "anthropic/claude-opus-5.5", supported_parameters: ["tools", "tool_choice"] }),
     translateContext,
   ) as unknown as { v2Set: Record<string, OverridesSet> };
-  expect(opus.v2Set["capabilities.tools"]!(undefined)).toEqual({ supported: true, choice: ["auto", "none"] });
+  // Its lab limits choice to auto and none, so the file inherits it instead of restating it.
+  expect(opus.v2Set["capabilities.tools"]!(undefined)).toBeUndefined();
+  expect(opus.v2Set["capabilities.tools"]!({ supported: true, choice })).toEqual({ supported: true });
 });
 
 test("syncs every OpenRouter price into v2 files without changing v1", async () => {
