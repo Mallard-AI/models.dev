@@ -327,7 +327,7 @@ export const cloudflareAiGateway = {
       header: noteHeader([...prefixNotes(id), ...curated.note ?? []]),
       v2Set: {
         api: decision
-          ? () => RUN_API
+          ? () => DECISION_RUN_API
           : (current: unknown) => gatewayApis(current, native?.protocol, source.catalog.request_formats),
       },
     };
@@ -390,12 +390,14 @@ export function buildCloudflareAiGatewayModel(
 // schema. Generated media comes back as a URL (or a data URI), transcripts as text.
 // Decision models (TypeSafe Jev) take a System One body as `input` and answer in a run
 // record: `{ result: { state: "Completed", result: { answers, usage } } }`.
-// No @opencode/ai entry point speaks /ai/run, so there's no OpenCode package.
+// OpenCode's cloudflare-ai-gateway entry calls /ai/run for decision models only,
+// so media models have no OpenCode package.
+const RUN_BASE_URL = "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai";
 const RUN_API = {
-  "workers-ai-run": {
-    base_url: "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai",
-    sdk: { opencodeai: "none" },
-  },
+  "workers-ai-run": { base_url: RUN_BASE_URL, sdk: { opencodeai: "none" } },
+};
+const DECISION_RUN_API = {
+  "workers-ai-run": { base_url: RUN_BASE_URL, sdk: { opencodeai: "@opencode/ai/providers/cloudflare-ai-gateway" } },
 };
 
 const MEDIA_NOTES: Record<MediaType, string[]> = {

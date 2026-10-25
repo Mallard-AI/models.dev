@@ -1085,7 +1085,7 @@ test("lists decision models on the /ai/run API", () => {
   const run = {
     "workers-ai-run": {
       base_url: "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai",
-      sdk: { opencodeai: "none" },
+      sdk: { opencodeai: "@opencode/ai/providers/cloudflare-ai-gateway" },
     },
   };
   expect(translated.v2Set.api(undefined)).toEqual(run);
