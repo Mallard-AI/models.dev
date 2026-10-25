@@ -15,11 +15,13 @@
 # Flipping thinking.type on the next request drops the cache.
 # Adding or removing tools between turns drops the cache (2026-10-19).
 # Changing reasoning_effort between turns also drops the cache.
+# Tools: tool_choice supports only auto on Chat Completions and none|auto on Responses; no strict tool mode
+#   (https://docs.bigmodel.cn/cn/guide/capabilities/function-calling, https://docs.bigmodel.cn/cn/guide/develop/responses/introduction).
 schema = 2
 base_model = "zhipuai/glm-5.2"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto"] }
 reasoning = { supported = true, default = { type = "effort", value = "max" }, toggle = true, effort = ["high", "max"] }
 structured_output = true
 top_k = false

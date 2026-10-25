@@ -15,11 +15,13 @@
 # effort_updates: left out. Flipping thinking.type on the next request keeps the cache (reasoning tokens
 # ~100 vs 0), but there's no in-history effort message, so it doesn't count.
 # Adding or removing tools between turns drops the cache (2026-10-19).
+# Tools: tool_choice supports only auto on Chat Completions and none|auto on Responses; no strict tool mode
+#   (https://docs.bigmodel.cn/cn/guide/capabilities/function-calling, https://docs.bigmodel.cn/cn/guide/develop/responses/introduction).
 schema = 2
 base_model = "zhipuai/glm-4.7"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto"] }
 reasoning = { supported = true, default = { type = "toggle", value = true }, toggle = true }
 top_k = false
 cache = { implicit = true }

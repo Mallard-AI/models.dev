@@ -11,11 +11,13 @@
 # a late system message is followed but not kept in place (cached tokens drop to ~0 vs ~7.5k on the
 # unchanged control), so system_updates is left out.
 # Adding or removing tools between turns drops the cache (2026-10-19).
+# Tools: tool_choice supports only auto on Chat Completions and none|auto on Responses; no strict tool mode
+#   (https://docs.bigmodel.cn/cn/guide/capabilities/function-calling, https://docs.bigmodel.cn/cn/guide/develop/responses/introduction).
 schema = 2
 base_model = "zhipuai/glm-4.7-flash"
 
 [capabilities]
-tools = { supported = true }
+tools = { supported = true, choice = ["auto"] }
 reasoning = { supported = true, default = { type = "toggle", value = true }, toggle = true }
 top_k = false
 cache = { implicit = true }
